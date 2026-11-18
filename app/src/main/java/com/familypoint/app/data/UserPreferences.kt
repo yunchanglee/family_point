@@ -2,6 +2,7 @@ package com.familypoint.app.data
 
 import android.content.Context
 import android.location.Location
+import com.familypoint.app.model.FamilyNotificationMessage
 import java.util.UUID
 
 class UserPreferences(context: Context) {
@@ -75,6 +76,31 @@ class UserPreferences(context: Context) {
             .apply()
     }
 
+    fun saveUnreadNotification(senderNickname: String, message: String) {
+        prefs.edit()
+            .putString(KEY_UNREAD_SENDER, senderNickname)
+            .putString(KEY_UNREAD_MESSAGE, message)
+            .putLong(KEY_UNREAD_TS, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun consumeUnreadNotification(): FamilyNotificationMessage? {
+        val sender = prefs.getString(KEY_UNREAD_SENDER, null)
+        val msg = prefs.getString(KEY_UNREAD_MESSAGE, null)
+        if (sender.isNullOrBlank() || msg.isNullOrBlank()) return null
+        val ts = prefs.getLong(KEY_UNREAD_TS, System.currentTimeMillis())
+        prefs.edit()
+            .remove(KEY_UNREAD_SENDER)
+            .remove(KEY_UNREAD_MESSAGE)
+            .remove(KEY_UNREAD_TS)
+            .apply()
+        return FamilyNotificationMessage(
+            id = ts.toString(),
+            senderNickname = sender,
+            message = msg
+        )
+    }
+
     companion object {
         private const val KEY_DEVICE_UID = "device_uid"
         private const val KEY_MEMBER_ID = "member_id"
@@ -87,5 +113,8 @@ class UserPreferences(context: Context) {
         private const val KEY_LAST_LAT = "last_lat"
         private const val KEY_LAST_LNG = "last_lng"
         private const val KEY_LAST_SENT_MS = "last_sent_ms"
+        private const val KEY_UNREAD_SENDER = "unread_sender"
+        private const val KEY_UNREAD_MESSAGE = "unread_message"
+        private const val KEY_UNREAD_TS = "unread_ts"
     }
 }

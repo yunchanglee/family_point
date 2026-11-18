@@ -109,11 +109,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private suspend fun checkIncomingNotifications() {
+        checkLocalUnreadNotification(null, null)
         val myId = prefs.memberId ?: return
         val res = repository.consumePendingNotifications(myId)
         val list = res.getOrNull().orEmpty()
         if (list.isNotEmpty()) {
             _uiState.update { it.copy(incomingNotification = list.last()) }
+        }
+    }
+
+    fun checkLocalUnreadNotification(intentSender: String?, intentMessage: String?) {
+        val unread = prefs.consumeUnreadNotification()
+        if (unread != null) {
+            _uiState.update { it.copy(incomingNotification = unread) }
+            return
+        }
+        if (!intentSender.isNullOrBlank() && !intentMessage.isNullOrBlank()) {
+            _uiState.update {
+                it.copy(
+                    incomingNotification = FamilyNotificationMessage(
+                        id = System.currentTimeMillis().toString(),
+                        senderNickname = intentSender,
+                        message = intentMessage
+                    )
+                )
+            }
         }
     }
 

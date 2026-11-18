@@ -255,35 +255,57 @@ class LocationSyncService : Service() {
 
         val messageChannel = NotificationChannel(
             MESSAGE_CHANNEL_ID,
-            "가족 알림 메시지",
+            "가족 긴급 알림 메시지",
             NotificationManager.IMPORTANCE_HIGH
         ).apply {
-            description = "가족 구성원이 보낸 알림 메시지를 수신합니다."
+            description = "가족 구성원이 보낸 알림 메시지를 화면 상단 팝업으로 표시합니다."
             enableVibration(true)
+            setShowBadge(true)
+            lockscreenVisibility = Notification.VISIBILITY_PUBLIC
         }
         manager.createNotificationChannel(messageChannel)
     }
 
     private fun showIncomingFamilyMessageNotification(senderNickname: String, message: String) {
-        val openIntent = Intent(this, MainActivity::class.java)
+        // 앱을 열었을 때도 메시지 전문을 다이얼로그로 확인할 수 있도록 로컬 저장
+        prefs.saveUnreadNotification(senderNickname, message)
+
+        val now = System.currentTimeMillis()
+        val openIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra(EXTRA_SENDER_NICKNAME, senderNickname)
+            putExtra(EXTRA_MESSAGE_TEXT, message)
+        }
         val openPending = PendingIntent.getActivity(
             this,
-            (System.currentTimeMillis() % 10000).toInt(),
+            (now % 10000).toInt(),
             openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        val titleText = "${senderNickname}님의 가족 알림"
         val noti = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
-            .setSmallIcon(R.drawable.avatar_01)
-            .setContentTitle("가족 알림 · ${senderNickname}님")
+            .setSmallIcon(R.drawable.ic_stat_notification)
+            .setContentTitle(titleText)
             .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setSubText("가족 메시지")
+            .setTicker("$senderNickname: $message")
+            .setStyle(
+                NotificationCompat.BigTextStyle()
+                    .setBigContentTitle(titleText)
+                    .bigText(message)
+            )
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setGroup("family_msg_$now")
             .setAutoCancel(true)
             .setContentIntent(openPending)
             .build()
 
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        manager.notify((System.currentTimeMillis() % 100000).toInt() + 5000, noti)
+        manager.notify((now % 100000).toInt() + 5000, noti)
     }
 
     private fun buildLowDistractionNotification(): Notification {
@@ -306,10 +328,11 @@ class LocationSyncService : Service() {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.avatar_01)
+            .setSmallIcon(R.drawable.ic_stat_notification)
             .setContentTitle("우리 가족 위치 공유 중 (${prefs.nickname})")
             .setContentText("앱을 닫아도 저전력 모드로 가족에게 위치를 전송합니다.")
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setGroup("family_point_service_status")
             .setOngoing(true)
             .setSilent(true)
             .setContentIntent(openPending)
@@ -331,9 +354,11 @@ class LocationSyncService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "family_point_low_channel"
-        private const val MESSAGE_CHANNEL_ID = "family_point_message_channel"
+        private const val MESSAGE_CHANNEL_ID = "family_point_urgent_msg_v2"
         private const val NOTIFICATION_ID = 1001
         const val ACTION_STOP = "com.familypoint.app.ACTION_STOP_SHARING"
+        const val EXTRA_SENDER_NICKNAME = "extra_sender_nickname"
+        const val EXTRA_MESSAGE_TEXT = "extra_message_text"
 
         fun start(context: Context) {
             val intent = Intent(context, LocationSyncService::class.java)

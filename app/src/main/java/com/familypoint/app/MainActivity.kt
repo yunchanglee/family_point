@@ -1,6 +1,7 @@
 package com.familypoint.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -27,6 +28,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleNotificationIntent(intent)
 
         setContent {
             MaterialTheme {
@@ -137,5 +139,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.checkLocalUnreadNotification(null, null)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        val sender = intent?.getStringExtra(LocationSyncService.EXTRA_SENDER_NICKNAME)
+        val msg = intent?.getStringExtra(LocationSyncService.EXTRA_MESSAGE_TEXT)
+        viewModel.checkLocalUnreadNotification(sender, msg)
     }
 }
