@@ -691,12 +691,12 @@ fun MapScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // 3열 메뉴 버튼: [전화하기] [문자하기] [알림보내기]
+                        // 3열 아이콘 전용 버튼: [전화하기] [문자하기] [알림보내기]
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // 1) 전화하기 -> 전화 앱으로 이동
+                            // 1) 전화하기 아이콘 버튼 -> 전화 앱으로 이동
                             Button(
                                 onClick = {
                                     val dialUri = if (target.phoneNumber.isNotBlank()) {
@@ -709,20 +709,21 @@ fun MapScreen(
                                     }
                                     runCatching { context.startActivity(dialIntent) }
                                 },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(46.dp),
+                                shape = RoundedCornerShape(23.dp),
+                                contentPadding = PaddingValues(0.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Call,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(15.dp)
+                                    contentDescription = "전화하기",
+                                    modifier = Modifier.size(22.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("전화하기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
 
-                            // 2) 문자하기 -> 문자 앱으로 이동
+                            // 2) 문자하기 아이콘 버튼 -> 문자 앱으로 이동
                             Button(
                                 onClick = {
                                     val smsUri = if (target.phoneNumber.isNotBlank()) {
@@ -735,36 +736,38 @@ fun MapScreen(
                                     }
                                     runCatching { context.startActivity(smsIntent) }
                                 },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(46.dp),
+                                shape = RoundedCornerShape(23.dp),
+                                contentPadding = PaddingValues(0.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Email,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(15.dp)
+                                    contentDescription = "문자하기",
+                                    modifier = Modifier.size(22.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("문자하기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
 
-                            // 3) 알림보내기 -> 해당 가족에게 알림 메시지 작성 다이얼로그 오픈
+                            // 3) 알림보내기 아이콘 버튼 -> 알림 메시지 작성 다이얼로그 오픈
                             Button(
                                 onClick = {
                                     notificationMessageInput = ""
                                     notificationTargetMember = target
                                 },
-                                modifier = Modifier.weight(1f),
-                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(46.dp),
+                                shape = RoundedCornerShape(23.dp),
+                                contentPadding = PaddingValues(0.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Notifications,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(15.dp)
+                                    contentDescription = "알림보내기",
+                                    modifier = Modifier.size(22.dp)
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("알림보내기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
