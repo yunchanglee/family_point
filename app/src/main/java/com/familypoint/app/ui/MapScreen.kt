@@ -419,12 +419,19 @@ fun MapScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "우리 가족 (${familyMembers.size})",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF0F172A)
-                            )
+                            Column {
+                                Text(
+                                    text = "우리 가족 (${familyMembers.size})",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF0F172A)
+                                )
+                                Text(
+                                    text = "코드: $inviteCode",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(

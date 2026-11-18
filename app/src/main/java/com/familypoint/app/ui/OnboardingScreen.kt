@@ -52,11 +52,13 @@ import com.familypoint.app.model.AvatarCatalog
 fun OnboardingScreen(
     initialNickname: String,
     initialAvatarCode: String,
+    initialInviteCode: String,
     initialPhoneNumber: String,
     isSaving: Boolean,
     errorMessage: String?,
-    onSaveProfile: (nickname: String, avatarCode: String, phoneNumber: String) -> Unit
+    onSaveProfile: (nickname: String, avatarCode: String, inviteCode: String, phoneNumber: String) -> Unit
 ) {
+    var inviteCode by remember(initialInviteCode) { mutableStateOf(initialInviteCode) }
     var nickname by remember(initialNickname) { mutableStateOf(initialNickname) }
     var selectedAvatarCode by remember(initialAvatarCode) {
         val base = initialAvatarCode.substringBefore("|")
@@ -73,22 +75,22 @@ fun OnboardingScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
                 .imePadding()
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .padding(horizontal = 20.dp, vertical = 10.dp)
         ) {
             Text(
                 text = "우리 가족 어디 있나?",
-                fontSize = 24.sp,
+                fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF0F172A)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = "가족 지도에서 보여줄 별칭과 대표 캐릭터를 선택해 주세요.",
-                fontSize = 14.sp,
+                text = "우리 가족만의 가족코드와 별칭, 대표 캐릭터를 선택해 주세요.",
+                fontSize = 13.sp,
                 color = Color(0xFF475569)
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // 선택된 프로필 미리보기 카드
             Card(
@@ -100,44 +102,57 @@ fun OnboardingScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
                         painter = painterResource(id = AvatarCatalog.getDrawableRes(selectedAvatarCode)),
                         contentDescription = "선택된 아바타",
                         modifier = Modifier
-                            .size(64.dp)
+                            .size(56.dp)
                             .clip(CircleShape)
                             .border(2.dp, Color(0xFF2563EB), CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(14.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (nickname.isBlank()) "별칭을 입력해 주세요" else nickname,
-                            fontSize = 20.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (nickname.isBlank()) Color(0xFF94A3B8) else Color(0xFF1E293B)
                         )
-                        if (phoneNumber.isNotBlank()) {
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = phoneNumber,
-                                fontSize = 13.sp,
-                                color = Color(0xFF64748B)
-                            )
-                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = buildString {
+                                append("가족코드: ")
+                                append(if (inviteCode.isBlank()) "미입력" else inviteCode.uppercase())
+                                if (phoneNumber.isNotBlank()) {
+                                    append(" · ")
+                                    append(phoneNumber)
+                                }
+                            },
+                            fontSize = 12.sp,
+                            color = Color(0xFF2563EB)
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 별칭 & 전화번호 입력란
+            // 1행: 가족코드 & 내 별칭 입력란
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                OutlinedTextField(
+                    value = inviteCode,
+                    onValueChange = { if (it.length <= 12) inviteCode = it.uppercase() },
+                    label = { Text("가족코드 등록") },
+                    placeholder = { Text("예: FAMILY01") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
                 OutlinedTextField(
                     value = nickname,
                     onValueChange = { if (it.length <= 12) nickname = it },
@@ -145,35 +160,39 @@ fun OnboardingScreen(
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
-                OutlinedTextField(
-                    value = phoneNumber,
-                    onValueChange = { if (it.length <= 15) phoneNumber = it.filter { c -> c.isDigit() || c == '-' } },
-                    label = { Text("전화번호 (선택)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    modifier = Modifier.weight(1.1f)
-                )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 2행: 전화번호 입력란 (선택)
+            OutlinedTextField(
+                value = phoneNumber,
+                onValueChange = { if (it.length <= 15) phoneNumber = it.filter { c -> c.isDigit() || c == '-' } },
+                label = { Text("내 전화번호 (선택, 전화·문자 연동용)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "대표 이미지 선택",
-                fontSize = 15.sp,
+                fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1E293B)
             )
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // 20종 아바타 그리드 (타이틀 없이 아이콘만 깔끔하게 표시)
+            // 20종 아바타 그리드
             LazyVerticalGrid(
                 columns = GridCells.Fixed(4),
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                contentPadding = PaddingValues(vertical = 2.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(AvatarCatalog.avatars, key = { it.code }) { avatar ->
                     val isSelected = selectedAvatarCode.startsWith(avatar.code.take(9))
@@ -190,19 +209,19 @@ fun OnboardingScreen(
                                 shape = RoundedCornerShape(14.dp)
                             )
                             .clickable { selectedAvatarCode = avatar.code }
-                            .padding(vertical = 10.dp)
+                            .padding(vertical = 8.dp)
                     ) {
                         Image(
                             painter = painterResource(id = avatar.drawableRes),
                             contentDescription = null,
-                            modifier = Modifier.size(60.dp)
+                            modifier = Modifier.size(54.dp)
                         )
                     }
                 }
             }
 
             if (!errorMessage.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.error,
@@ -210,20 +229,21 @@ fun OnboardingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Button(
                 onClick = {
                     onSaveProfile(
                         nickname.trim(),
                         selectedAvatarCode.take(9),
+                        inviteCode.trim().uppercase(),
                         phoneNumber.trim()
                     )
                 },
-                enabled = nickname.trim().length >= 2 && !isSaving,
+                enabled = inviteCode.trim().length >= 2 && nickname.trim().length >= 2 && !isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
+                    .height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isSaving) {
@@ -233,7 +253,7 @@ fun OnboardingScreen(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("저장 중...")
+                    Text("가족 그룹 연결 중...")
                 } else {
                     Text(
                         text = "시작하기",

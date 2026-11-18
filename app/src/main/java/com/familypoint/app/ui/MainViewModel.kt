@@ -116,13 +116,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(incomingNotification = null) }
     }
 
-    fun saveProfile(nickname: String, avatarCode: String, phoneNumber: String) {
+    fun saveProfile(nickname: String, avatarCode: String, inviteCode: String, phoneNumber: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val context = getApplication<Application>()
             val battery = LocationHelper.getBatteryLevel(context)
 
-            val groupRes = repository.getOrCreateFamilyGroup("FAMILY")
+            val normalizedCode = inviteCode.trim().uppercase()
+            val groupRes = repository.getOrCreateFamilyGroup(normalizedCode)
             val group = groupRes.getOrElse { err ->
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = err.message)

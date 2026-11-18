@@ -27,7 +27,7 @@ class UserPreferences(context: Context) {
         set(value) = prefs.edit().putString(KEY_GROUP_ID, value).apply()
 
     var inviteCode: String
-        get() = prefs.getString(KEY_INVITE_CODE, "FAMILY") ?: "FAMILY"
+        get() = prefs.getString(KEY_INVITE_CODE, "") ?: ""
         set(value) = prefs.edit().putString(KEY_INVITE_CODE, value.trim().uppercase()).apply()
 
     var nickname: String

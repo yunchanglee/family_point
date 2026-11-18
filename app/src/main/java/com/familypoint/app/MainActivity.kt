@@ -102,11 +102,12 @@ class MainActivity : ComponentActivity() {
                     OnboardingScreen(
                         initialNickname = uiState.nickname,
                         initialAvatarCode = uiState.avatarCode,
+                        initialInviteCode = uiState.inviteCode,
                         initialPhoneNumber = uiState.phoneNumber,
                         isSaving = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
-                        onSaveProfile = { nickname, avatarCode, phoneNumber ->
-                            viewModel.saveProfile(nickname, avatarCode, phoneNumber)
+                        onSaveProfile = { nickname, avatarCode, inviteCode, phoneNumber ->
+                            viewModel.saveProfile(nickname, avatarCode, inviteCode, phoneNumber)
                         }
                     )
                 } else {
