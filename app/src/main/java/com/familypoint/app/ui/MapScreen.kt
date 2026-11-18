@@ -901,32 +901,6 @@ fun MapScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "최근 1일(24시간) 이동 경로 보기",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF1E293B)
-                            )
-                            Text(
-                                text = "DB 보관 기록: ${historyPoints24h.size}개 지점 (24시간 경과 시 자동 삭제)",
-                                fontSize = 11.sp,
-                                color = Color(0xFF64748B)
-                            )
-                        }
-                        Switch(
-                            checked = show24hTrail,
-                            onCheckedChange = onToggle24hTrail
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
                                 text = "저전력 백그라운드 위치 공유 (무음 상태 알림)",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.SemiBold,
@@ -1196,7 +1170,7 @@ fun MapScreen(
             )
         }
 
-        // 11. 인증 완료 후 열리는 가족관리(삭제) 다이얼로그
+        // 11. 인증 완료 후 열리는 가족관리(경로 보기 설정 및 가족 삭제) 다이얼로그
         if (isFamilyManageDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isFamilyManageDialogOpen = false },
@@ -1209,12 +1183,44 @@ fun MapScreen(
                 },
                 text = {
                     Column(modifier = Modifier.fillMaxWidth()) {
+                        // 가족관리 내부로 이동된 최근 1일(24시간) 이동 경로 보기 설정
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFFEFF6FF))
+                                .border(1.dp, Color(0xFFBFDBFE), RoundedCornerShape(12.dp))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "최근 1일(24시간) 이동 경로 보기",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1E3A8A)
+                                )
+                                Text(
+                                    text = "DB 보관 기록: ${historyPoints24h.size}개 지점 (24시간 경과 자동 삭제)",
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF3B82F6)
+                                )
+                            }
+                            Switch(
+                                checked = show24hTrail,
+                                onCheckedChange = onToggle24hTrail
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         Text(
                             text = "삭제할 가족 구성원의 [삭제] 버튼을 누르면 DB와 지도에서 즉시 제거됩니다.",
                             fontSize = 12.sp,
                             color = Color(0xFF64748B)
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier
