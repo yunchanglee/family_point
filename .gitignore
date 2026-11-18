@@ -1,0 +1,12 @@
+# Gradle & Android build directories
+.gradle/
+.kotlin/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# Keep root release APK (familyPoint.apk) tracked
+!familyPoint.apk

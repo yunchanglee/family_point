@@ -1,0 +1,3 @@
+-keep class com.familypoint.app.model.** { *; }
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <clipPath id="circleClip_19">
+      <circle cx="100" cy="100" r="92"/>
+    </clipPath>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="#B3E5FC" stroke="#DAE1E7" stroke-width="4"/>
+  <g clip-path="url(#circleClip_19)"><circle cx="100" cy="108" r="48" fill="#37474F"/><ellipse cx="100" cy="116" rx="34" ry="36" fill="#FFFFFF"/><circle cx="84" cy="98" r="5.5" fill="#2C3E50"/><circle cx="116" cy="98" r="5.5" fill="#2C3E50"/><polygon points="90,108 110,108 100,120" fill="#FFB300"/>  </g>
+</svg>

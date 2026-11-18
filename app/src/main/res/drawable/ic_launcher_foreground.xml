@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 하단 그림자 타원 -->
+    <path
+        android:fillColor="#330F172A"
+        android:pathData="M42,83 a12,3.5 0 1,0 24,0 a12,3.5 0 1,0 -24,0" />
+
+    <!-- 메인 위치 핀 외곽 (화이트 프레임) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,22 C39.6,22 28,33.6 28,48 C28,64.5 54,82 54,82 C54,82 80,64.5 80,48 C80,33.6 68.4,22 54,22 Z" />
+
+    <!-- 핀 내부 웜 코랄/오렌지 원형 배경 -->
+    <path
+        android:fillColor="#FF6B6B"
+        android:pathData="M54,47m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0" />
+
+    <!-- 가족 3인 실루엣 (아빠, 엄마, 아이) -->
+    <!-- 왼쪽 어른 머리 & 어깨 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M45,42m-4.2,0a4.2,4.2 0,1 1,8.4 0a4.2,4.2 0,1 1,-8.4 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M37.5,56 C37.5,50.5 41,48 45,48 C49,48 52.5,50.5 52.5,56 Z" />
+
+    <!-- 오른쪽 어른 머리 & 어깨 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M63,42m-4.2,0a4.2,4.2 0,1 1,8.4 0a4.2,4.2 0,1 1,-8.4 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M55.5,56 C55.5,50.5 59,48 63,48 C67,48 70.5,50.5 70.5,56 Z" />
+
+    <!-- 가운데 아이 머리 & 어깨 (앞쪽 배치) -->
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M54,46.5m-3.6,0a3.6,3.6 0,1 1,7.2 0a3.6,3.6 0,1 1,-7.2 0" />
+    <path
+        android:fillColor="#FEF08A"
+        android:pathData="M47.5,58 C47.5,53.2 50.5,51.2 54,51.2 C57.5,51.2 60.5,53.2 60.5,58 Z" />
+
+    <!-- 상단 작은 하트 포인트 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,37.5 C52.2,35.2 49.5,35.8 49.5,38 C49.5,40 54,42.5 54,42.5 C54,42.5 58.5,40 58.5,38 C58.5,35.8 55.8,35.2 54,37.5 Z" />
+</vector>
