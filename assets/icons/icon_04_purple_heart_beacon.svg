@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="240" height="240">
+  <defs>
+    <linearGradient id="g4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="55%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="46" fill="url(#g4)"/>
+  <!-- Signal Waves -->
+  <path d="M52,56 A68,68 0 0,1 148,56" fill="none" stroke="#FFFFFF" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round"/>
+  <path d="M36,42 A90,90 0 0,1 164,42" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="5" stroke-linecap="round"/>
+  <!-- Heart-shaped Location Pin -->
+  <path d="M100,164 C100,164 40,122 40,78 C40,54 58,38 78,38 C90,38 97,45 100,52 C103,45 110,38 122,38 C142,38 160,54 160,78 C160,122 100,164 100,164 Z" fill="#FFFFFF"/>
+  <!-- Inner Gradient Circle with 3 Family Dots -->
+  <circle cx="100" cy="88" r="30" fill="#7C3AED"/>
+  <circle cx="88" cy="82" r="7" fill="#FEF08A"/>
+  <circle cx="112" cy="82" r="7" fill="#FEF08A"/>
+  <circle cx="100" cy="96" r="6" fill="#FFFFFF"/>
+  <path d="M82,106 Q100,116 118,106" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+</svg>

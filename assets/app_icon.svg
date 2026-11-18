@@ -1,22 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="256" height="256">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="240" height="240">
   <defs>
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#1E3A8A"/>
-      <stop offset="55%" stop-color="#2563EB"/>
-      <stop offset="100%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#2563EB"/>
     </linearGradient>
   </defs>
-  <rect width="108" height="108" rx="24" fill="url(#bgGrad)"/>
-  <circle cx="54" cy="54" r="38" fill="none" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="1.5"/>
-  <circle cx="54" cy="54" r="48" fill="none" stroke="#FFFFFF" stroke-opacity="0.1" stroke-width="1.5"/>
-  <ellipse cx="54" cy="83" rx="12" ry="3.5" fill="#0F172A" fill-opacity="0.25"/>
-  <path d="M54,22 C39.6,22 28,33.6 28,48 C28,64.5 54,82 54,82 C54,82 80,64.5 80,48 C80,33.6 68.4,22 54,22 Z" fill="#FFFFFF"/>
-  <circle cx="54" cy="47" r="20" fill="#FF6B6B"/>
-  <circle cx="45" cy="42" r="4.2" fill="#FFFFFF"/>
-  <path d="M37.5,56 C37.5,50.5 41,48 45,48 C49,48 52.5,50.5 52.5,56 Z" fill="#FFFFFF"/>
-  <circle cx="63" cy="42" r="4.2" fill="#FFFFFF"/>
-  <path d="M55.5,56 C55.5,50.5 59,48 63,48 C67,48 70.5,50.5 70.5,56 Z" fill="#FFFFFF"/>
-  <circle cx="54" cy="46.5" r="3.6" fill="#FEF08A"/>
-  <path d="M47.5,58 C47.5,53.2 50.5,51.2 54,51.2 C57.5,51.2 60.5,53.2 60.5,58 Z" fill="#FEF08A"/>
-  <path d="M54,37.5 C52.2,35.2 49.5,35.8 49.5,38 C49.5,40 54,42.5 54,42.5 C54,42.5 58.5,40 58.5,38 C58.5,35.8 55.8,35.2 54,37.5 Z" fill="#FFFFFF"/>
+  <rect width="200" height="200" rx="46" fill="url(#g3)"/>
+  <!-- Folded Map Base -->
+  <polygon points="32,72 76,56 76,154 32,168" fill="#E0F2FE"/>
+  <polygon points="76,56 124,72 124,168 76,154" fill="#BAE6FD"/>
+  <polygon points="124,72 168,56 168,154 124,168" fill="#E0F2FE"/>
+  <!-- Green Parks & Roads on Map -->
+  <polygon points="40,90 68,80 68,125 40,135" fill="#6EE7B7"/>
+  <polygon points="132,96 160,86 160,135 132,145" fill="#6EE7B7"/>
+  <path d="M36,145 L76,130 L124,145 L164,125" fill="none" stroke="#FBBF24" stroke-width="7" stroke-linecap="round"/>
+  <!-- Big Red-Coral Location Pin with Family Smile -->
+  <ellipse cx="100" cy="142" rx="20" ry="6" fill="#0F172A" fill-opacity="0.3"/>
+  <path d="M100,26 C68,26 44,50 44,81 C44,116 100,142 100,142 C100,142 156,116 156,81 C156,50 132,26 100,26 Z" fill="#EF4444" stroke="#FFFFFF" stroke-width="5"/>
+  <circle cx="100" cy="78" r="28" fill="#FFFFFF"/>
+  <circle cx="90" cy="74" r="4.5" fill="#1E293B"/>
+  <circle cx="110" cy="74" r="4.5" fill="#1E293B"/>
+  <path d="M89,86 Q100,96 111,86" fill="none" stroke="#EF4444" stroke-width="4.5" stroke-linecap="round"/>
 </svg>

@@ -32,7 +32,7 @@ data class MainUiState(
     val familyMembers: List<FamilyMember> = emptyList(),
     val selectedMember: FamilyMember? = null,
     val historyPoints24h: List<LocationHistoryPoint> = emptyList(),
-    val show24hTrail: Boolean = true,
+    val show24hTrail: Boolean = false,
     val backgroundSharingEnabled: Boolean = true,
     val incomingNotification: FamilyNotificationMessage? = null,
     val errorMessage: String? = null,
@@ -239,7 +239,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun selectMember(member: FamilyMember) {
         _uiState.update { it.copy(selectedMember = member) }
-        loadSelectedMember24hHistory(member.id)
+        if (_uiState.value.show24hTrail) {
+            loadSelectedMember24hHistory(member.id)
+        }
     }
 
     fun toggle24hTrail(enabled: Boolean) {

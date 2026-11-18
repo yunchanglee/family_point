@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="240" height="240">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF5E62"/>
+      <stop offset="100%" stop-color="#FF9966"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="46" fill="url(#g1)"/>
+  <circle cx="100" cy="95" r="72" fill="#FFFFFF" fill-opacity="0.12"/>
+  <ellipse cx="100" cy="166" rx="28" ry="7" fill="#7F1D1D" fill-opacity="0.28"/>
+  <!-- White Location Pin -->
+  <path d="M100,30 C66,30 40,56 40,89 C40,126 100,164 100,164 C100,164 160,126 160,89 C160,56 134,30 100,30 Z" fill="#FFFFFF"/>
+  <!-- Warm House inside Pin -->
+  <path d="M100,52 L64,82 L73,82 L73,112 C73,115 75,117 78,117 L122,117 C125,117 127,115 127,112 L127,82 L136,82 Z" fill="#FF5E62"/>
+  <!-- Heart Window inside House -->
+  <path d="M100,83 C95,76 85,78 85,86 C85,93 100,103 100,103 C100,103 115,93 115,86 C115,78 105,76 100,83 Z" fill="#FEF08A"/>
+</svg>

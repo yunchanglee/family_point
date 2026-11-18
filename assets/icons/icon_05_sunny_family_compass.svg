@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="240" height="240">
+  <defs>
+    <linearGradient id="g5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#FDE047"/>
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="46" fill="url(#g5)"/>
+  <!-- Navy Compass Circle -->
+  <circle cx="100" cy="100" r="72" fill="#0F172A" stroke="#FFFFFF" stroke-width="6"/>
+  <!-- Compass Ticks -->
+  <line x1="100" y1="34" x2="100" y2="44" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/>
+  <line x1="100" y1="156" x2="100" y2="166" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/>
+  <line x1="34" y1="100" x2="44" y2="100" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/>
+  <line x1="156" y1="100" x2="166" y2="100" stroke="#FBBF24" stroke-width="4" stroke-linecap="round"/>
+  <!-- Center Location Pin (Sky Blue & Coral) -->
+  <path d="M100,48 C76,48 58,66 58,89 C58,116 100,146 100,146 C100,146 142,116 142,89 C142,66 124,48 100,48 Z" fill="#38BDF8"/>
+  <circle cx="100" cy="88" r="24" fill="#FFFFFF"/>
+  <!-- Cute Family Pair inside Pin -->
+  <circle cx="92" cy="84" r="6" fill="#0F172A"/>
+  <circle cx="108" cy="86" r="5" fill="#EF4444"/>
+  <path d="M82,102 C82,94 87,92 92,92 C97,92 102,94 102,102 Z" fill="#0F172A"/>
+  <path d="M99,102 C99,96 103,94 108,94 C113,94 117,96 117,102 Z" fill="#EF4444"/>
+</svg>
