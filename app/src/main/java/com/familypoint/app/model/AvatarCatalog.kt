@@ -36,7 +36,7 @@ object AvatarCatalog {
     @DrawableRes
     fun getDrawableRes(code: String?): Int {
         if (code.isNullOrBlank()) return R.drawable.avatar_01
-        val normalized = code.trim()
+        val normalized = code.trim().substringBefore("|")
         avatars.firstOrNull { it.code == normalized || normalized.startsWith(it.code.take(9)) }
             ?.let { return it.drawableRes }
         return R.drawable.avatar_01
@@ -44,7 +44,7 @@ object AvatarCatalog {
 
     fun getLabel(code: String?): String {
         if (code.isNullOrBlank()) return avatars.first().label
-        val normalized = code.trim()
+        val normalized = code.trim().substringBefore("|")
         return avatars.firstOrNull {
             it.code == normalized || normalized.startsWith(it.code.take(9))
         }?.label ?: avatars.first().label

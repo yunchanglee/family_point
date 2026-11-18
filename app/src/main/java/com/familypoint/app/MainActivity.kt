@@ -102,11 +102,11 @@ class MainActivity : ComponentActivity() {
                     OnboardingScreen(
                         initialNickname = uiState.nickname,
                         initialAvatarCode = uiState.avatarCode,
-                        initialInviteCode = uiState.inviteCode,
+                        initialPhoneNumber = uiState.phoneNumber,
                         isSaving = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
-                        onSaveProfile = { nickname, avatarCode, inviteCode ->
-                            viewModel.saveProfile(nickname, avatarCode, inviteCode)
+                        onSaveProfile = { nickname, avatarCode, phoneNumber ->
+                            viewModel.saveProfile(nickname, avatarCode, phoneNumber)
                         }
                     )
                 } else {
@@ -120,13 +120,18 @@ class MainActivity : ComponentActivity() {
                         backgroundSharingEnabled = uiState.backgroundSharingEnabled,
                         isLoading = uiState.isLoading,
                         statusMessage = uiState.statusMessage,
+                        incomingNotification = uiState.incomingNotification,
+                        onDismissIncomingNotification = { viewModel.dismissIncomingNotification() },
                         onSelectMember = { viewModel.selectMember(it) },
                         onToggle24hTrail = { viewModel.toggle24hTrail(it) },
                         onToggleBackgroundSharing = { viewModel.toggleBackgroundSharing(it) },
                         onSendMyLocationNow = { viewModel.sendMyLocationNow() },
                         onRefreshFamilyLocations = { viewModel.refreshFamilyLocations() },
                         onEditProfile = { viewModel.openProfileEditor() },
-                        onDeleteFamilyMember = { viewModel.deleteFamilyMember(it) }
+                        onDeleteFamilyMember = { viewModel.deleteFamilyMember(it) },
+                        onSendNotificationToMember = { target, msg ->
+                            viewModel.sendNotificationToMember(target, msg)
+                        }
                     )
                 }
             }

@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -42,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.familypoint.app.model.AvatarCatalog
@@ -50,15 +52,17 @@ import com.familypoint.app.model.AvatarCatalog
 fun OnboardingScreen(
     initialNickname: String,
     initialAvatarCode: String,
-    initialInviteCode: String,
+    initialPhoneNumber: String,
     isSaving: Boolean,
     errorMessage: String?,
-    onSaveProfile: (nickname: String, avatarCode: String, inviteCode: String) -> Unit
+    onSaveProfile: (nickname: String, avatarCode: String, phoneNumber: String) -> Unit
 ) {
     var nickname by remember(initialNickname) { mutableStateOf(initialNickname) }
     var selectedAvatarCode by remember(initialAvatarCode) {
-        mutableStateOf(initialAvatarCode.ifBlank { AvatarCatalog.avatars.first().code })
+        val base = initialAvatarCode.substringBefore("|")
+        mutableStateOf(base.ifBlank { AvatarCatalog.avatars.first().code })
     }
+    var phoneNumber by remember(initialPhoneNumber) { mutableStateOf(initialPhoneNumber) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -84,7 +88,7 @@ fun OnboardingScreen(
                 color = Color(0xFF475569)
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             // 선택된 프로필 미리보기 카드
             Card(
@@ -115,22 +119,43 @@ fun OnboardingScreen(
                             fontWeight = FontWeight.Bold,
                             color = if (nickname.isBlank()) Color(0xFF94A3B8) else Color(0xFF1E293B)
                         )
+                        if (phoneNumber.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = phoneNumber,
+                                fontSize = 13.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
                     }
                 }
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 별칭 & 전화번호 입력란
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = nickname,
+                    onValueChange = { if (it.length <= 12) nickname = it },
+                    label = { Text("내 별칭 입력") },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f)
+                )
+                OutlinedTextField(
+                    value = phoneNumber,
+                    onValueChange = { if (it.length <= 15) phoneNumber = it.filter { c -> c.isDigit() || c == '-' } },
+                    label = { Text("전화번호 (선택)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    modifier = Modifier.weight(1.1f)
+                )
+            }
+
             Spacer(modifier = Modifier.height(12.dp))
-
-            // 별칭 단일 입력란
-            OutlinedTextField(
-                value = nickname,
-                onValueChange = { if (it.length <= 12) nickname = it },
-                label = { Text("내 별칭 입력") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = "대표 이미지 선택",
@@ -151,7 +176,7 @@ fun OnboardingScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(AvatarCatalog.avatars, key = { it.code }) { avatar ->
-                    val isSelected = avatar.code == selectedAvatarCode
+                    val isSelected = selectedAvatarCode.startsWith(avatar.code.take(9))
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
@@ -191,8 +216,8 @@ fun OnboardingScreen(
                 onClick = {
                     onSaveProfile(
                         nickname.trim(),
-                        selectedAvatarCode,
-                        "FAMILY"
+                        selectedAvatarCode.take(9),
+                        phoneNumber.trim()
                     )
                 },
                 enabled = nickname.trim().length >= 2 && !isSaving,

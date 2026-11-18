@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.familypoint.app.data.SupabaseRepository
 import com.familypoint.app.data.UserPreferences
 import com.familypoint.app.model.FamilyMember
+import com.familypoint.app.model.FamilyNotificationMessage
 import com.familypoint.app.model.LocationHistoryPoint
 import com.familypoint.app.service.LocationHelper
 import com.familypoint.app.service.LocationSyncService
@@ -26,12 +27,14 @@ data class MainUiState(
     val groupId: String? = null,
     val inviteCode: String = "FAMILY",
     val nickname: String = "",
-    val avatarCode: String = "avatar_01_dad_glasses",
+    val avatarCode: String = "avatar_01",
+    val phoneNumber: String = "",
     val familyMembers: List<FamilyMember> = emptyList(),
     val selectedMember: FamilyMember? = null,
     val historyPoints24h: List<LocationHistoryPoint> = emptyList(),
     val show24hTrail: Boolean = true,
-    val backgroundSharingEnabled: Boolean = false,
+    val backgroundSharingEnabled: Boolean = true,
+    val incomingNotification: FamilyNotificationMessage? = null,
     val errorMessage: String? = null,
     val statusMessage: String? = null
 )
@@ -49,6 +52,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             inviteCode = prefs.inviteCode,
             nickname = prefs.nickname,
             avatarCode = prefs.avatarCode,
+            phoneNumber = prefs.phoneNumber,
             backgroundSharingEnabled = prefs.backgroundSharingEnabled
         )
     )
@@ -65,11 +69,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch {
                 val groupId = prefs.groupId
                 if (!groupId.isNullOrBlank()) {
+                    val combinedAvatar = combineAvatarAndPhone(prefs.avatarCode, prefs.phoneNumber)
                     repository.registerOrUpdateMember(
                         groupId = groupId,
                         deviceUid = prefs.deviceUid,
                         nickname = prefs.nickname,
-                        avatarCode = prefs.avatarCode,
+                        avatarCode = combinedAvatar,
                         batteryLevel = LocationHelper.getBatteryLevel(getApplication())
                     )
                 }
@@ -79,28 +84,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /**
-     * 앱이 화면에 켜져 있는 동안에만 30초 간격으로 가족 위치를 갱신합니다. (백그라운드에서는 동작하지 않아 배터리/데이터 절약)
-     */
+    private fun combineAvatarAndPhone(avatarCode: String, phoneNumber: String): String {
+        val base = avatarCode.substringBefore("|").take(9).ifBlank { "avatar_01" }
+        val cleanPhone = phoneNumber.trim()
+        return if (cleanPhone.isNotBlank()) "$base|$cleanPhone" else base
+    }
+
     private fun startForegroundAutoRefreshLoop() {
         autoRefreshJob?.cancel()
         autoRefreshJob = viewModelScope.launch {
             while (isActive) {
-                delay(30_000L)
+                delay(15_000L)
                 if (!_uiState.value.isOnboarding) {
                     refreshFamilyLocations(silent = true)
+                    checkIncomingNotifications()
                 }
             }
         }
     }
 
-    fun saveProfile(nickname: String, avatarCode: String, inviteCode: String) {
+    private suspend fun checkIncomingNotifications() {
+        val myId = prefs.memberId ?: return
+        val res = repository.consumePendingNotifications(myId)
+        val list = res.getOrNull().orEmpty()
+        if (list.isNotEmpty()) {
+            _uiState.update { it.copy(incomingNotification = list.last()) }
+        }
+    }
+
+    fun dismissIncomingNotification() {
+        _uiState.update { it.copy(incomingNotification = null) }
+    }
+
+    fun saveProfile(nickname: String, avatarCode: String, phoneNumber: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val context = getApplication<Application>()
             val battery = LocationHelper.getBatteryLevel(context)
 
-            val groupRes = repository.getOrCreateFamilyGroup(inviteCode)
+            val groupRes = repository.getOrCreateFamilyGroup("FAMILY")
             val group = groupRes.getOrElse { err ->
                 _uiState.update {
                     it.copy(isLoading = false, errorMessage = err.message)
@@ -108,11 +130,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
+            val combinedAvatar = combineAvatarAndPhone(avatarCode, phoneNumber)
             val memberRes = repository.registerOrUpdateMember(
                 groupId = group.id,
                 deviceUid = prefs.deviceUid,
                 nickname = nickname,
-                avatarCode = avatarCode,
+                avatarCode = combinedAvatar,
                 batteryLevel = battery
             )
             val member = memberRes.getOrElse { err ->
@@ -126,7 +149,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             prefs.memberId = member.id
             prefs.inviteCode = group.inviteCode
             prefs.nickname = member.nickname
-            prefs.avatarCode = member.avatarCode
+            prefs.avatarCode = member.cleanAvatarCode
+            prefs.phoneNumber = phoneNumber.trim()
             prefs.backgroundSharingEnabled = true
 
             LocationSyncWorker.schedulePeriodic(context)
@@ -140,7 +164,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     groupId = group.id,
                     inviteCode = group.inviteCode,
                     nickname = member.nickname,
-                    avatarCode = member.avatarCode,
+                    avatarCode = member.cleanAvatarCode,
+                    phoneNumber = phoneNumber.trim(),
                     backgroundSharingEnabled = true,
                     selectedMember = member,
                     errorMessage = null,
@@ -156,6 +181,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun openProfileEditor() {
         _uiState.update { it.copy(isOnboarding = true, errorMessage = null) }
+    }
+
+    fun sendNotificationToMember(targetMember: FamilyMember, message: String) {
+        viewModelScope.launch {
+            val senderName = prefs.nickname.ifBlank { "가족" }
+            val res = repository.sendFamilyNotification(
+                targetMemberId = targetMember.id,
+                senderNickname = senderName,
+                message = message
+            )
+            res.onSuccess {
+                _uiState.update {
+                    it.copy(statusMessage = "'${targetMember.nickname}'님에게 알림을 전송했습니다.")
+                }
+            }.onFailure { err ->
+                _uiState.update {
+                    it.copy(statusMessage = "알림 전송 실패: ${err.message}")
+                }
+            }
+        }
     }
 
     fun deleteFamilyMember(member: FamilyMember) {

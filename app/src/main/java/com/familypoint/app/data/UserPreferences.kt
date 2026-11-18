@@ -35,8 +35,12 @@ class UserPreferences(context: Context) {
         set(value) = prefs.edit().putString(KEY_NICKNAME, value.trim()).apply()
 
     var avatarCode: String
-        get() = prefs.getString(KEY_AVATAR_CODE, "avatar_01_dad_glasses") ?: "avatar_01_dad_glasses"
+        get() = prefs.getString(KEY_AVATAR_CODE, "avatar_01") ?: "avatar_01"
         set(value) = prefs.edit().putString(KEY_AVATAR_CODE, value).apply()
+
+    var phoneNumber: String
+        get() = prefs.getString(KEY_PHONE_NUMBER, "") ?: ""
+        set(value) = prefs.edit().putString(KEY_PHONE_NUMBER, value.trim()).apply()
 
     var backgroundSharingEnabled: Boolean
         get() = prefs.getBoolean(KEY_BG_SHARING, true)
@@ -78,6 +82,7 @@ class UserPreferences(context: Context) {
         private const val KEY_INVITE_CODE = "invite_code"
         private const val KEY_NICKNAME = "nickname"
         private const val KEY_AVATAR_CODE = "avatar_code"
+        private const val KEY_PHONE_NUMBER = "phone_number"
         private const val KEY_BG_SHARING = "bg_sharing_enabled"
         private const val KEY_LAST_LAT = "last_lat"
         private const val KEY_LAST_LNG = "last_lng"

@@ -48,6 +48,7 @@ class LocationSyncService : Service() {
     private lateinit var prefs: UserPreferences
     private val repository = SupabaseRepository()
     private var heartbeatJob: Job? = null
+    private var notificationPollJob: Job? = null
 
     private val locationCallback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {
@@ -89,6 +90,7 @@ class LocationSyncService : Service() {
         LocationSyncWorker.schedulePeriodic(this)
         startBalancedLocationUpdates()
         startHeartbeatLoop()
+        startFamilyNotificationPollLoop()
         return START_STICKY
     }
 
@@ -149,8 +151,25 @@ class LocationSyncService : Service() {
         }
     }
 
+    private fun startFamilyNotificationPollLoop() {
+        notificationPollJob?.cancel()
+        notificationPollJob = serviceScope.launch {
+            while (isActive) {
+                val myMemberId = prefs.memberId
+                if (!myMemberId.isNullOrBlank()) {
+                    val res = repository.consumePendingNotifications(myMemberId)
+                    res.getOrNull()?.forEach { msg ->
+                        showIncomingFamilyMessageNotification(msg.senderNickname, msg.message)
+                    }
+                }
+                delay(12_000L)
+            }
+        }
+    }
+
     private fun stopLocationUpdates() {
         heartbeatJob?.cancel()
+        notificationPollJob?.cancel()
         runCatching {
             fusedClient.removeLocationUpdates(locationCallback)
             fusedClient.removeLocationUpdates(getLocationReceiverPendingIntent(this))
@@ -233,6 +252,38 @@ class LocationSyncService : Service() {
             setSound(null, null)
         }
         manager.createNotificationChannel(channel)
+
+        val messageChannel = NotificationChannel(
+            MESSAGE_CHANNEL_ID,
+            "가족 알림 메시지",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "가족 구성원이 보낸 알림 메시지를 수신합니다."
+            enableVibration(true)
+        }
+        manager.createNotificationChannel(messageChannel)
+    }
+
+    private fun showIncomingFamilyMessageNotification(senderNickname: String, message: String) {
+        val openIntent = Intent(this, MainActivity::class.java)
+        val openPending = PendingIntent.getActivity(
+            this,
+            (System.currentTimeMillis() % 10000).toInt(),
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val noti = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.avatar_01)
+            .setContentTitle("가족 알림 · ${senderNickname}님")
+            .setContentText(message)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(openPending)
+            .build()
+
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify((System.currentTimeMillis() % 100000).toInt() + 5000, noti)
     }
 
     private fun buildLowDistractionNotification(): Notification {
@@ -280,6 +331,7 @@ class LocationSyncService : Service() {
 
     companion object {
         private const val CHANNEL_ID = "family_point_low_channel"
+        private const val MESSAGE_CHANNEL_ID = "family_point_message_channel"
         private const val NOTIFICATION_ID = 1001
         const val ACTION_STOP = "com.familypoint.app.ACTION_STOP_SHARING"
 

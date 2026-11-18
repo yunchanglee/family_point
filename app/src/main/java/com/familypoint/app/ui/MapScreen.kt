@@ -1,6 +1,8 @@
 package com.familypoint.app.ui
 
+import android.content.Intent
 import android.graphics.Color as AndroidColor
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -34,15 +36,18 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.ManageAccounts
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -84,6 +89,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.familypoint.app.model.AvatarCatalog
 import com.familypoint.app.model.FamilyMember
+import com.familypoint.app.model.FamilyNotificationMessage
 import com.familypoint.app.model.LocationHistoryPoint
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -106,13 +112,16 @@ fun MapScreen(
     backgroundSharingEnabled: Boolean,
     isLoading: Boolean,
     statusMessage: String?,
+    incomingNotification: FamilyNotificationMessage?,
+    onDismissIncomingNotification: () -> Unit,
     onSelectMember: (FamilyMember) -> Unit,
     onToggle24hTrail: (Boolean) -> Unit,
     onToggleBackgroundSharing: (Boolean) -> Unit,
     onSendMyLocationNow: () -> Unit,
     onRefreshFamilyLocations: () -> Unit,
     onEditProfile: () -> Unit,
-    onDeleteFamilyMember: (FamilyMember) -> Unit
+    onDeleteFamilyMember: (FamilyMember) -> Unit,
+    onSendNotificationToMember: (FamilyMember, String) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -120,6 +129,13 @@ fun MapScreen(
     var isFamilyPanelOpen by remember { mutableStateOf(false) }
     // 하단 설정 시트 열림/닫힘 상태
     var isSettingsPanelOpen by remember { mutableStateOf(false) }
+
+    // 지도에서 가족 클릭 시 열리는 액션 메뉴(전화하기/문자하기/알림보내기) 대상 구성원
+    var actionMenuMember by remember { mutableStateOf<FamilyMember?>(null) }
+
+    // 알림보내기 메시지 작성 다이얼로그 상태
+    var notificationTargetMember by remember { mutableStateOf<FamilyMember?>(null) }
+    var notificationMessageInput by remember { mutableStateOf("") }
 
     // 가족관리 비밀번호 인증 다이얼로그 및 가족관리 목록 다이얼로그 상태
     var isPasswordDialogOpen by remember { mutableStateOf(false) }
@@ -182,7 +198,7 @@ fun MapScreen(
                     map.overlays.add(polyline)
                 }
 
-                // (B) 가족 구성원 아바타 + 별칭 커스텀 마커 렌더링 (선택된 구성원이 맨 위에 오도록 정렬)
+                // (B) 가족 구성원 아바타 + 별칭 커스텀 마커 렌더링
                 familyMembers.sortedBy { it.id == selectedMember?.id }.forEach { member ->
                     val lat = member.lastLat ?: return@forEach
                     val lng = member.lastLng ?: return@forEach
@@ -212,6 +228,7 @@ fun MapScreen(
                         )
                         setOnMarkerClickListener { _, _ ->
                             onSelectMember(member)
+                            actionMenuMember = member
                             true
                         }
                     }
@@ -276,9 +293,7 @@ fun MapScreen(
                                     .background(Color(0xFFFEE2E2))
                                     .clickable {
                                         onSelectMember(offlineMember)
-                                        if (offlineMember.lastLat == null || offlineMember.lastLng == null) {
-                                            isFamilyPanelOpen = true
-                                        }
+                                        actionMenuMember = offlineMember
                                     }
                                     .padding(horizontal = 8.dp, vertical = 4.dp)
                             ) {
@@ -469,6 +484,7 @@ fun MapScreen(
                                     )
                                     .clickable {
                                         onSelectMember(member)
+                                        actionMenuMember = member
                                     }
                                     .padding(horizontal = 10.dp, vertical = 8.dp)
                             ) {
@@ -557,7 +573,10 @@ fun MapScreen(
                 }
 
                 FloatingActionButton(
-                    onClick = { isSettingsPanelOpen = true },
+                    onClick = {
+                        actionMenuMember = null
+                        isSettingsPanelOpen = true
+                    },
                     containerColor = Color(0xFF2563EB),
                     contentColor = Color.White,
                     shape = CircleShape
@@ -570,7 +589,183 @@ fun MapScreen(
             }
         }
 
-        // 6. 하단 설정 및 위치 공유 시트 (설정 아이콘 클릭 시에만 열림)
+        // 6. 지도에서 가족 클릭 시 나타나는 [전화하기 / 문자하기 / 알림보내기] 액션 메뉴 팝업 카드
+        AnimatedVisibility(
+            visible = actionMenuMember != null && !isSettingsPanelOpen,
+            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+            exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(start = 14.dp, end = 84.dp, bottom = 16.dp)
+        ) {
+            val target = actionMenuMember
+            if (target != null) {
+                val isOffline = isMemberDisconnected(target)
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.98f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = AvatarCatalog.getDrawableRes(target.avatarCode)),
+                                    contentDescription = target.nickname,
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .clip(CircleShape)
+                                        .border(
+                                            width = 2.dp,
+                                            color = if (isOffline) Color(0xFFDC2626) else Color(0xFF2563EB),
+                                            shape = CircleShape
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = if (target.id == myMemberId) "${target.nickname} (나)" else target.nickname,
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF0F172A)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(6.dp))
+                                                .background(
+                                                    if (isOffline) Color(0xFFDC2626) else Color(0xFF10B981)
+                                                )
+                                                .padding(horizontal = 5.dp, vertical = 1.dp)
+                                        ) {
+                                            Text(
+                                                text = if (isOffline) "연결끊김" else "연결됨",
+                                                color = Color.White,
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                    Text(
+                                        text = buildString {
+                                            append("🔋${target.batteryLevel}% · ${formatRelativeTime(target.lastUpdatedAt)}")
+                                            if (target.phoneNumber.isNotBlank()) {
+                                                append(" · ${target.phoneNumber}")
+                                            }
+                                        },
+                                        fontSize = 11.sp,
+                                        color = Color(0xFF64748B)
+                                    )
+                                }
+                            }
+                            IconButton(
+                                onClick = { actionMenuMember = null },
+                                modifier = Modifier.size(28.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "메뉴 닫기",
+                                    tint = Color(0xFF64748B),
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // 3열 메뉴 버튼: [전화하기] [문자하기] [알림보내기]
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            // 1) 전화하기 -> 전화 앱으로 이동
+                            Button(
+                                onClick = {
+                                    val dialUri = if (target.phoneNumber.isNotBlank()) {
+                                        Uri.parse("tel:${target.phoneNumber}")
+                                    } else {
+                                        Uri.parse("tel:")
+                                    }
+                                    val dialIntent = Intent(Intent.ACTION_DIAL, dialUri).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    runCatching { context.startActivity(dialIntent) }
+                                },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF059669))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Call,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("전화하기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            // 2) 문자하기 -> 문자 앱으로 이동
+                            Button(
+                                onClick = {
+                                    val smsUri = if (target.phoneNumber.isNotBlank()) {
+                                        Uri.parse("smsto:${target.phoneNumber}")
+                                    } else {
+                                        Uri.parse("smsto:")
+                                    }
+                                    val smsIntent = Intent(Intent.ACTION_SENDTO, smsUri).apply {
+                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    }
+                                    runCatching { context.startActivity(smsIntent) }
+                                },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Email,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("문자하기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+
+                            // 3) 알림보내기 -> 해당 가족에게 알림 메시지 작성 다이얼로그 오픈
+                            Button(
+                                onClick = {
+                                    notificationMessageInput = ""
+                                    notificationTargetMember = target
+                                },
+                                modifier = Modifier.weight(1f),
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("알림보내기", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 7. 하단 설정 및 위치 공유 시트 (설정 아이콘 클릭 시에만 열림)
         AnimatedVisibility(
             visible = isSettingsPanelOpen,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
@@ -809,7 +1004,120 @@ fun MapScreen(
             }
         }
 
-        // 7. 가족관리 비밀번호 인증 다이얼로그 (고정 패스워드: "family")
+        // 8. 알림보내기 메시지 작성 다이얼로그
+        val notiTarget = notificationTargetMember
+        if (notiTarget != null) {
+            val presets = listOf("지금 어디야?", "집으로 오세요", "연락 부탁해요", "식사하러 오세요")
+            AlertDialog(
+                onDismissRequest = { notificationTargetMember = null },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = Color(0xFF7C3AED)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "'${notiTarget.nickname}'님에게 알림보내기",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "전송할 알림 메시지를 입력하거나 빠른 문구를 선택해 주세요.",
+                            fontSize = 13.sp,
+                            color = Color(0xFF475569)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            items(presets) { preset ->
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = Color(0xFFF3E8FF),
+                                    modifier = Modifier.clickable {
+                                        notificationMessageInput = preset
+                                    }
+                                ) {
+                                    Text(
+                                        text = preset,
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF6B21A8),
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                        OutlinedTextField(
+                            value = notificationMessageInput,
+                            onValueChange = { if (it.length <= 28) notificationMessageInput = it },
+                            label = { Text("알림 메시지 입력 (최대 28자)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val msg = notificationMessageInput.trim()
+                            if (msg.isNotBlank()) {
+                                onSendNotificationToMember(notiTarget, msg)
+                                notificationTargetMember = null
+                            }
+                        },
+                        enabled = notificationMessageInput.trim().isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7C3AED))
+                    ) {
+                        Text("보내기")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { notificationTargetMember = null }) {
+                        Text("취소")
+                    }
+                }
+            )
+        }
+
+        // 9. 가족으로부터 도착한 알림 메시지 수신 팝업 다이얼로그
+        if (incomingNotification != null) {
+            AlertDialog(
+                onDismissRequest = onDismissIncomingNotification,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = Color(0xFF2563EB)
+                    )
+                },
+                title = {
+                    Text(
+                        text = "${incomingNotification.senderNickname}님의 가족 알림",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                text = {
+                    Text(
+                        text = incomingNotification.message,
+                        fontSize = 16.sp,
+                        color = Color(0xFF0F172A)
+                    )
+                },
+                confirmButton = {
+                    Button(onClick = onDismissIncomingNotification) {
+                        Text("확인")
+                    }
+                }
+            )
+        }
+
+        // 10. 가족관리 비밀번호 인증 다이얼로그 (고정 패스워드: "family")
         if (isPasswordDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isPasswordDialogOpen = false },
@@ -878,7 +1186,7 @@ fun MapScreen(
             )
         }
 
-        // 8. 인증 완료 후 열리는 가족관리(삭제) 다이얼로그
+        // 11. 인증 완료 후 열리는 가족관리(삭제) 다이얼로그
         if (isFamilyManageDialogOpen) {
             AlertDialog(
                 onDismissRequest = { isFamilyManageDialogOpen = false },

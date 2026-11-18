@@ -3,6 +3,7 @@ package com.familypoint.app.data
 import com.familypoint.app.BuildConfig
 import com.familypoint.app.model.FamilyGroup
 import com.familypoint.app.model.FamilyMember
+import com.familypoint.app.model.FamilyNotificationMessage
 import com.familypoint.app.model.LocationHistoryPoint
 import com.familypoint.app.model.ReportLocationRpcPayload
 import kotlinx.coroutines.Dispatchers
@@ -307,6 +308,94 @@ class SupabaseRepository {
             }
         }
 
+    /**
+     * 특정 가족 구성원에게 알림 메시지를 전송합니다.
+     */
+    suspend fun sendFamilyNotification(
+        targetMemberId: String,
+        senderNickname: String,
+        message: String
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        val targetPrefix = targetMemberId.take(8)
+        val cleanSender = senderNickname.replace("|", " ").trim().take(10)
+        val cleanMsg = message.replace("|", " ").trim().take(28)
+        val encodedGroupName = "$targetPrefix|$cleanSender|$cleanMsg"
+        val inviteKey = "N" + UUID.randomUUID().toString().replace("-", "").take(11).uppercase()
+
+        LocalFallbackStore.addNotification(targetMemberId, cleanSender, cleanMsg)
+
+        runCatching {
+            val payload = buildJsonObject {
+                put("invite_code", inviteKey)
+                put("group_name", encodedGroupName)
+            }.toString()
+
+            val postReq = Request.Builder()
+                .url("$baseUrl/rest/v1/family_groups")
+                .addSupabaseHeaders()
+                .post(payload.toRequestBody(jsonMediaType))
+                .build()
+
+            client.newCall(postReq).execute().use { resp ->
+                val bodyStr = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw parseSupabaseException(resp.code, bodyStr)
+                }
+            }
+        }
+    }
+
+    /**
+     * 나에게 도착한 가족 알림 메시지를 조회하고 읽음(삭제) 처리합니다.
+     */
+    suspend fun consumePendingNotifications(
+        myMemberId: String
+    ): Result<List<FamilyNotificationMessage>> = withContext(Dispatchers.IO) {
+        val targetPrefix = myMemberId.take(8)
+        runCatching {
+            val encodedLike = URLEncoder.encode("$targetPrefix|*", "UTF-8")
+            val getReq = Request.Builder()
+                .url("$baseUrl/rest/v1/family_groups?invite_code=like.N*&group_name=like.$encodedLike&select=*&order=created_at.asc")
+                .addSupabaseHeaders()
+                .get()
+                .build()
+
+            val rows = client.newCall(getReq).execute().use { resp ->
+                val bodyStr = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw parseSupabaseException(resp.code, bodyStr)
+                }
+                json.decodeFromString<List<FamilyGroup>>(bodyStr)
+            }
+
+            val messages = mutableListOf<FamilyNotificationMessage>()
+            for (row in rows) {
+                val parts = row.groupName.split("|", limit = 3)
+                if (parts.size == 3) {
+                    messages.add(
+                        FamilyNotificationMessage(
+                            id = row.id,
+                            senderNickname = parts[1],
+                            message = parts[2],
+                            createdAt = row.createdAt
+                        )
+                    )
+                }
+                // 수신 완료된 알림은 즉시 삭제
+                val delReq = Request.Builder()
+                    .url("$baseUrl/rest/v1/family_groups?id=eq.${row.id}")
+                    .addSupabaseHeaders()
+                    .delete()
+                    .build()
+                runCatching { client.newCall(delReq).execute().close() }
+            }
+            LocalFallbackStore.consumeNotifications(myMemberId)
+            messages
+        }.recoverCatching {
+            LocalFallbackStore.consumeNotifications(myMemberId)
+        }
+    }
+
     private fun parseSupabaseException(httpCode: Int, responseBody: String): Exception {
         return IllegalStateException("Supabase HTTP $httpCode: $responseBody")
     }
@@ -511,5 +600,24 @@ private object LocalFallbackStore {
     fun deleteMember(memberId: String) {
         members.remove(memberId)
         history.removeIf { it.memberId == memberId }
+    }
+
+    private val pendingNotifications = ConcurrentHashMap<String, MutableList<FamilyNotificationMessage>>()
+
+    fun addNotification(targetMemberId: String, senderNickname: String, message: String) {
+        val list = pendingNotifications.getOrPut(targetMemberId) { CopyOnWriteArrayList() }
+        list.add(
+            FamilyNotificationMessage(
+                id = UUID.randomUUID().toString(),
+                senderNickname = senderNickname,
+                message = message,
+                createdAt = Instant.now().toString()
+            )
+        )
+    }
+
+    fun consumeNotifications(myMemberId: String): List<FamilyNotificationMessage> {
+        val list = pendingNotifications.remove(myMemberId) ?: return emptyList()
+        return list.toList()
     }
 }

@@ -30,6 +30,8 @@
    - 위치 보고 시 단일 RPC(`report_location`) 호출과 `pg_cron` 스케줄러를 통해 **24시간이 지난 위치 이력 데이터를 DB에서 자동 삭제**합니다.
 7. **비밀번호 인증 기반 가족관리 (가족 삭제)**
    - 설정 시트의 `가족관리` 버튼 클릭 후 고정 비밀번호(`family`)를 입력하면 등록된 가족 구성원을 DB와 지도에서 즉시 삭제할 수 있습니다.
+8. **가족 클릭 액션 메뉴 (`전화하기` / `문자하기` / `알림보내기`)**
+   - 지도 위 가족 마커(또는 목록)를 클릭하면 **`전화하기`**(전화 앱 이동), **`문자하기`**(문자 앱 이동), **`알림보내기`**(메시지 작성 및 대상 가족 단말로 즉시 푸시/인앱 알림 전송) 메뉴가 나타납니다.
 
 ---
 
@@ -42,6 +44,10 @@
 | 4. 연결 끊김 가족 지도 감지 | 5. 가족관리 비밀번호(`family`) 인증 | 6. 가족관리 (등록 가족 삭제) |
 | :---: | :---: | :---: |
 | <img src="assets/screenshot_12_offline_map.png" width="260" /> | <img src="assets/screenshot_14_password_dialog.png" width="260" /> | <img src="assets/screenshot_15_family_manage_dialog.png" width="260" /> |
+
+| 7. 가족 클릭 메뉴 (전화/문자/알림) | 8. 가족에게 알림보내기 메시지 작성 |
+| :---: | :---: |
+| <img src="assets/screenshot_16_member_action_menu.png" width="260" /> | <img src="assets/screenshot_17_send_notification_dialog.png" width="260" /> |
 
 ---
 

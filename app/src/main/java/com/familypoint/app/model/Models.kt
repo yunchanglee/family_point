@@ -24,7 +24,13 @@ data class FamilyMember(
     @SerialName("last_accuracy") val lastAccuracy: Float? = null,
     @SerialName("activity_type") val activityType: String? = "STILL",
     @SerialName("last_updated_at") val lastUpdatedAt: String? = null
-)
+) {
+    val cleanAvatarCode: String
+        get() = avatarCode.substringBefore("|")
+
+    val phoneNumber: String
+        get() = avatarCode.substringAfter("|", "").trim()
+}
 
 @Serializable
 data class LocationHistoryPoint(
@@ -46,4 +52,11 @@ data class ReportLocationRpcPayload(
     @SerialName("p_accuracy") val accuracy: Float,
     @SerialName("p_battery") val battery: Int,
     @SerialName("p_activity") val activity: String
+)
+
+data class FamilyNotificationMessage(
+    val id: String,
+    val senderNickname: String,
+    val message: String,
+    val createdAt: String? = null
 )
