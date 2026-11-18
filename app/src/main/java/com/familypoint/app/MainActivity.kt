@@ -70,7 +70,8 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     val needed = mutableListOf(
                         Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                        Manifest.permission.READ_PHONE_NUMBERS
                     )
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         needed.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -103,11 +104,10 @@ class MainActivity : ComponentActivity() {
                         initialNickname = uiState.nickname,
                         initialAvatarCode = uiState.avatarCode,
                         initialInviteCode = uiState.inviteCode,
-                        initialPhoneNumber = uiState.phoneNumber,
                         isSaving = uiState.isLoading,
                         errorMessage = uiState.errorMessage,
-                        onSaveProfile = { nickname, avatarCode, inviteCode, phoneNumber ->
-                            viewModel.saveProfile(nickname, avatarCode, inviteCode, phoneNumber)
+                        onSaveProfile = { nickname, avatarCode, inviteCode ->
+                            viewModel.saveProfile(nickname, avatarCode, inviteCode)
                         }
                     )
                 } else {

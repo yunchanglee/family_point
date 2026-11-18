@@ -7,6 +7,9 @@ import android.content.IntentFilter
 import android.location.Location
 import android.location.LocationManager
 import android.os.BatteryManager
+import android.os.Build
+import android.telephony.SubscriptionManager
+import android.telephony.TelephonyManager
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -14,6 +17,38 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
 
 object LocationHelper {
+
+    /**
+     * 단말(USIM/시스템)에 등록된 전화번호를 자동으로 읽어옵니다.
+     * (+8210... 형태는 한국 표준 010... 형태로 정규화)
+     */
+    @SuppressLint("MissingPermission", "HardwareIds")
+    fun getDevicePhoneNumber(context: Context): String {
+        var rawNumber = ""
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            runCatching {
+                val sm = context.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE) as? SubscriptionManager
+                rawNumber = sm?.getPhoneNumber(SubscriptionManager.DEFAULT_SUBSCRIPTION_ID).orEmpty()
+            }
+        }
+
+        if (rawNumber.isBlank()) {
+            runCatching {
+                val tm = context.getSystemService(Context.TELEPHONY_SERVICE) as? TelephonyManager
+                @Suppress("DEPRECATION")
+                rawNumber = tm?.line1Number.orEmpty()
+            }
+        }
+
+        val digitsOnly = rawNumber.trim().replace(" ", "").replace("-", "")
+        if (digitsOnly.isBlank()) return ""
+        return when {
+            digitsOnly.startsWith("+82") -> "0" + digitsOnly.removePrefix("+82")
+            digitsOnly.startsWith("8210") -> "0" + digitsOnly.removePrefix("82")
+            else -> digitsOnly
+        }
+    }
 
     fun getBatteryLevel(context: Context): Int {
         val bm = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager

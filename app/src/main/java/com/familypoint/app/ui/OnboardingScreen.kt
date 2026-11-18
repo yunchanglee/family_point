@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -43,7 +42,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.familypoint.app.model.AvatarCatalog
@@ -53,10 +51,9 @@ fun OnboardingScreen(
     initialNickname: String,
     initialAvatarCode: String,
     initialInviteCode: String,
-    initialPhoneNumber: String,
     isSaving: Boolean,
     errorMessage: String?,
-    onSaveProfile: (nickname: String, avatarCode: String, inviteCode: String, phoneNumber: String) -> Unit
+    onSaveProfile: (nickname: String, avatarCode: String, inviteCode: String) -> Unit
 ) {
     var inviteCode by remember(initialInviteCode) { mutableStateOf(initialInviteCode) }
     var nickname by remember(initialNickname) { mutableStateOf(initialNickname) }
@@ -64,7 +61,6 @@ fun OnboardingScreen(
         val base = initialAvatarCode.substringBefore("|")
         mutableStateOf(base.ifBlank { AvatarCatalog.avatars.first().code })
     }
-    var phoneNumber by remember(initialPhoneNumber) { mutableStateOf(initialPhoneNumber) }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -75,22 +71,22 @@ fun OnboardingScreen(
                 .fillMaxSize()
                 .systemBarsPadding()
                 .imePadding()
-                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             Text(
                 text = "우리 가족 어디 있나?",
-                fontSize = 23.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF0F172A)
             )
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "우리 가족만의 가족코드와 별칭, 대표 캐릭터를 선택해 주세요.",
-                fontSize = 13.sp,
+                fontSize = 14.sp,
                 color = Color(0xFF475569)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 선택된 프로필 미리보기 카드
             Card(
@@ -102,54 +98,47 @@ fun OnboardingScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                        .padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Image(
                         painter = painterResource(id = AvatarCatalog.getDrawableRes(selectedAvatarCode)),
                         contentDescription = "선택된 아바타",
                         modifier = Modifier
-                            .size(56.dp)
+                            .size(64.dp)
                             .clip(CircleShape)
                             .border(2.dp, Color(0xFF2563EB), CircleShape)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = if (nickname.isBlank()) "별칭을 입력해 주세요" else nickname,
-                            fontSize = 18.sp,
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = if (nickname.isBlank()) Color(0xFF94A3B8) else Color(0xFF1E293B)
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = buildString {
-                                append("가족코드: ")
-                                append(if (inviteCode.isBlank()) "미입력" else inviteCode.uppercase())
-                                if (phoneNumber.isNotBlank()) {
-                                    append(" · ")
-                                    append(phoneNumber)
-                                }
-                            },
-                            fontSize = 12.sp,
+                            text = "가족코드: ${if (inviteCode.isBlank()) "미입력" else inviteCode.uppercase()}",
+                            fontSize = 13.sp,
                             color = Color(0xFF2563EB)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // 1행: 가족코드 & 내 별칭 입력란
+            // 가족코드 & 내 별칭 입력란 (전화번호는 시스템에서 자동 감지)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 OutlinedTextField(
                     value = inviteCode,
                     onValueChange = { if (it.length <= 12) inviteCode = it.uppercase() },
                     label = { Text("가족코드 등록") },
-                    placeholder = { Text("예: FAMILY01") },
+                    placeholder = { Text("예: FAMILY") },
                     singleLine = true,
                     modifier = Modifier.weight(1f)
                 )
@@ -158,31 +147,19 @@ fun OnboardingScreen(
                     onValueChange = { if (it.length <= 12) nickname = it },
                     label = { Text("내 별칭 입력") },
                     singleLine = true,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1.1f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 2행: 전화번호 입력란 (선택)
-            OutlinedTextField(
-                value = phoneNumber,
-                onValueChange = { if (it.length <= 15) phoneNumber = it.filter { c -> c.isDigit() || c == '-' } },
-                label = { Text("내 전화번호 (선택, 전화·문자 연동용)") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = "대표 이미지 선택",
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1E293B)
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // 20종 아바타 그리드
             LazyVerticalGrid(
@@ -190,9 +167,9 @@ fun OnboardingScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(vertical = 2.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(vertical = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(AvatarCatalog.avatars, key = { it.code }) { avatar ->
                     val isSelected = selectedAvatarCode.startsWith(avatar.code.take(9))
@@ -209,19 +186,19 @@ fun OnboardingScreen(
                                 shape = RoundedCornerShape(14.dp)
                             )
                             .clickable { selectedAvatarCode = avatar.code }
-                            .padding(vertical = 8.dp)
+                            .padding(vertical = 10.dp)
                     ) {
                         Image(
                             painter = painterResource(id = avatar.drawableRes),
                             contentDescription = null,
-                            modifier = Modifier.size(54.dp)
+                            modifier = Modifier.size(60.dp)
                         )
                     }
                 }
             }
 
             if (!errorMessage.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = errorMessage,
                     color = MaterialTheme.colorScheme.error,
@@ -229,21 +206,20 @@ fun OnboardingScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             Button(
                 onClick = {
                     onSaveProfile(
                         nickname.trim(),
                         selectedAvatarCode.take(9),
-                        inviteCode.trim().uppercase(),
-                        phoneNumber.trim()
+                        inviteCode.trim().uppercase()
                     )
                 },
                 enabled = inviteCode.trim().length >= 2 && nickname.trim().length >= 2 && !isSaving,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(52.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 if (isSaving) {

@@ -69,7 +69,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch {
                 val groupId = prefs.groupId
                 if (!groupId.isNullOrBlank()) {
-                    val combinedAvatar = combineAvatarAndPhone(prefs.avatarCode, prefs.phoneNumber)
+                    val autoPhone = LocationHelper.getDevicePhoneNumber(getApplication())
+                        .ifBlank { prefs.phoneNumber }
+                    if (autoPhone.isNotBlank()) {
+                        prefs.phoneNumber = autoPhone
+                    }
+                    val combinedAvatar = combineAvatarAndPhone(prefs.avatarCode, autoPhone)
                     repository.registerOrUpdateMember(
                         groupId = groupId,
                         deviceUid = prefs.deviceUid,
@@ -116,11 +121,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.update { it.copy(incomingNotification = null) }
     }
 
-    fun saveProfile(nickname: String, avatarCode: String, inviteCode: String, phoneNumber: String) {
+    fun saveProfile(nickname: String, avatarCode: String, inviteCode: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             val context = getApplication<Application>()
             val battery = LocationHelper.getBatteryLevel(context)
+            val autoPhone = LocationHelper.getDevicePhoneNumber(context)
+                .ifBlank { prefs.phoneNumber }
 
             val normalizedCode = inviteCode.trim().uppercase()
             val groupRes = repository.getOrCreateFamilyGroup(normalizedCode)
@@ -131,7 +138,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
-            val combinedAvatar = combineAvatarAndPhone(avatarCode, phoneNumber)
+            val combinedAvatar = combineAvatarAndPhone(avatarCode, autoPhone)
             val memberRes = repository.registerOrUpdateMember(
                 groupId = group.id,
                 deviceUid = prefs.deviceUid,
@@ -151,7 +158,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             prefs.inviteCode = group.inviteCode
             prefs.nickname = member.nickname
             prefs.avatarCode = member.cleanAvatarCode
-            prefs.phoneNumber = phoneNumber.trim()
+            prefs.phoneNumber = autoPhone
             prefs.backgroundSharingEnabled = true
 
             LocationSyncWorker.schedulePeriodic(context)
@@ -166,7 +173,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     inviteCode = group.inviteCode,
                     nickname = member.nickname,
                     avatarCode = member.cleanAvatarCode,
-                    phoneNumber = phoneNumber.trim(),
+                    phoneNumber = autoPhone,
                     backgroundSharingEnabled = true,
                     selectedMember = member,
                     errorMessage = null,
